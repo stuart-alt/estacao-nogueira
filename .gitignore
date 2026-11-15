@@ -1,0 +1,13 @@
+# Documentos pessoais — NUNCA publicar (CPF, renda, IR, conta bancária, assinaturas)
+contratos/
+servicos/
+*.pdf
+*.jpeg
+*.jpg
+*.local.json
+.superpowers/
+
+# Ambiente
+node_modules/
+.DS_Store
+Thumbs.db

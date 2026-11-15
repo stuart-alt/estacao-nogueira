@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Vistoria Estação Nogueira II</title>
+  <meta name="description" content="Checklist de vistoria de entrega das chaves, com o que a construtora e a DKZA devem entregar e geração de laudo.">
+  <meta name="theme-color" content="#1f5f8b">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Vistoria">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">Vistoria</div>
+    <div class="topbar-sub">Estação Nogueira II</div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <main id="view" tabindex="-1"></main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <nav class="tabs" aria-label="Seções">
+    <a href="#/inicio" data-tab="inicio"><span class="ico" aria-hidden="true">⌂</span>Início</a>
+    <a href="#/entrega" data-tab="entrega"><span class="ico" aria-hidden="true">▤</span>O que vem</a>
+    <a href="#/vistoria" data-tab="vistoria"><span class="ico" aria-hidden="true">✓</span>Vistoria</a>
+    <a href="#/ferramentas" data-tab="ferramentas"><span class="ico" aria-hidden="true">⚒</span>Ferramentas</a>
+    <a href="#/laudo" data-tab="laudo"><span class="ico" aria-hidden="true">✎</span>Laudo</a>
+  </nav>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

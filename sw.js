@@ -1,6 +1,6 @@
 // Service worker mínimo: torna o app instalável e o abre sem internet.
 // Incrementar CACHE a cada release.
-const CACHE = 'en2-v4';
+const CACHE = 'en2-v5';
 const ASSETS = [
   './',
   './index.html',

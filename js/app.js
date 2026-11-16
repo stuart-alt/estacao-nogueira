@@ -200,10 +200,17 @@ function photoBlock(itemId, status) {
       <button type="button" class="thumb-img" data-action="photo-view" data-id="${esc(p.id)}" data-item="${esc(itemId)}" aria-label="Ver foto ${k + 1}"><img src="${esc(p.url)}" alt=""></button>
       <button type="button" class="thumb-del" data-action="photo-del" data-id="${esc(p.id)}" data-item="${esc(itemId)}" aria-label="Apagar foto ${k + 1}">×</button>
     </div>`).join('');
+  // Dois botões: com "multiple", o Android 13+ abre só o seletor de fotos (sem câmera).
+  // "capture" abre a câmera direto em qualquer versão de Android e no iPhone.
   const add = list.length < MAX_PER_ITEM ? `
-    <label class="btn photo-add">📷 Adicionar foto
-      <input type="file" accept="image/*" multiple data-action="photo-add" data-id="${esc(itemId)}">
-    </label>` : `<p class="muted">Limite de ${MAX_PER_ITEM} fotos atingido.</p>`;
+    <div class="photo-btns">
+      <label class="btn photo-add">📷 Tirar foto
+        <input type="file" accept="image/*" capture="environment" data-action="photo-add" data-id="${esc(itemId)}">
+      </label>
+      <label class="btn photo-add">🖼️ Galeria
+        <input type="file" accept="image/*" multiple data-action="photo-add" data-id="${esc(itemId)}">
+      </label>
+    </div>` : `<p class="muted">Limite de ${MAX_PER_ITEM} fotos atingido.</p>`;
   const hint = status !== 'defeito' ? '<p class="muted">As fotos só entram no laudo quando o item está como Defeito.</p>' : '';
   return `<div class="photos">${list.length ? `<div class="thumbs">${thumbs}</div>` : ''}${add}${hint}</div>`;
 }

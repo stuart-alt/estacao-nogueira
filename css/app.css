@@ -169,7 +169,8 @@ body.typing .tabs { display: none; }
   border: 2px solid var(--surface); background: var(--bad); color: #fff; font-size: 18px; line-height: 1; cursor: pointer;
 }
 .thumb-del::after { content: ""; position: absolute; inset: -6px; } /* área de toque >= 44px */
-.photo-add { width: 100%; position: relative; overflow: hidden; }
+.photo-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.photo-add { width: 100%; position: relative; overflow: hidden; padding: 0 8px; }
 .photo-add input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
 .photo-add:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card.warn { border-color: #c98a00; font-size: 14px; }

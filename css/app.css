@@ -158,9 +158,86 @@ body.typing .tabs { display: none; }
   z-index: 20; background: var(--text); color: var(--bg); padding: 12px 16px; border-radius: 10px; text-align: center;
 }
 
+.text-version { margin: 12px 0; }
+.text-version > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--accent); font-weight: 600; }
+
+/* ---------- Laudo formatado (tela = pré-visualização em "papel"; impressão = A4) ---------- */
+.laudo-wrap { overflow-x: auto; margin: 12px -4px; }
+.laudo {
+  --lp-ink: #1b1f24; --lp-muted: #5d6673; --lp-line: #c9cfd6; --lp-soft: #f2f4f7; --lp-accent: #1f5f8b;
+  --lp-ok: #1e7d3c; --lp-bad: #b3261e;
+  background: #fff; color: var(--lp-ink); border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.18);
+  padding: 22px 18px; font-size: 13px; line-height: 1.45;
+}
+.laudo h1 { font-size: 20px; margin: 2px 0 0; color: var(--lp-ink); }
+.laudo h2 {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--lp-accent);
+  border-bottom: 2px solid var(--lp-accent); padding-bottom: 4px; margin: 22px 0 10px;
+}
+.laudo h3 { font-size: 14px; margin: 14px 0 6px; }
+.lp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-bottom: 3px solid var(--lp-accent); padding-bottom: 10px; }
+.lp-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--lp-accent); }
+.lp-date { text-align: right; font-size: 11px; color: var(--lp-muted); white-space: nowrap; }
+.lp-date b { font-size: 15px; color: var(--lp-ink); }
+.lp-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin: 16px 0 6px; }
+.lp-fields div { display: flex; flex-direction: column; }
+.lp-fields span { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--lp-muted); }
+.lp-fields i { display: block; border-bottom: 1px solid var(--lp-ink); height: 22px; }
+.lp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 6px; }
+.lp-stat { border: 1px solid var(--lp-line); border-radius: 6px; padding: 8px 6px; text-align: center; background: var(--lp-soft); }
+.lp-stat b { display: block; font-size: 20px; line-height: 1.1; }
+.lp-stat span { font-size: 10px; color: var(--lp-muted); }
+.lp-stat.ok b { color: var(--lp-ok); }
+.lp-stat.bad b { color: var(--lp-bad); }
+.lp-split { font-size: 12px; color: var(--lp-muted); margin: 6px 0 0; }
+.lp-split b { color: var(--lp-ink); }
+.lp-table { width: 100%; border-collapse: collapse; }
+.lp-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--lp-muted); background: var(--lp-soft); padding: 6px; border-bottom: 1px solid var(--lp-line); }
+.lp-table td { padding: 7px 6px; border-bottom: 1px solid var(--lp-line); vertical-align: top; }
+.lp-table .num { width: 28px; text-align: center; color: var(--lp-muted); }
+.lp-table .w-resp { width: 92px; }
+.lp-table .w-fix, .lp-fill { width: 88px; white-space: nowrap; color: var(--lp-muted); }
+.lp-table .w-status { width: 110px; }
+.lp-note { font-size: 12px; color: #3d4450; margin-top: 3px; padding-left: 8px; border-left: 2px solid var(--lp-line); }
+.lp-st { font-size: 11px; font-weight: 700; }
+.lp-st::before { margin-right: 4px; }
+.st-ok { color: var(--lp-ok); } .st-ok::before { content: "✓"; }
+.st-bad { color: var(--lp-bad); } .st-bad::before { content: "✗"; }
+.st-na { color: var(--lp-muted); } .st-na::before { content: "–"; }
+.st-pend { color: #8a6100; } .st-pend::before { content: "○"; }
+.laudo .badge { border: 1px solid currentColor; }
+.laudo .badge-construtora { background: #e3eefb; color: #1c4f8a; }
+.laudo .badge-dkza { background: #fdebd8; color: #9a4a07; }
+.lp-empty { padding: 10px; background: var(--lp-soft); border-radius: 6px; color: var(--lp-ok); font-weight: 600; }
+.lp-room { break-inside: avoid; }
+.lp-legal p { font-size: 11.5px; color: #3d4450; text-align: justify; }
+.lp-sigs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; break-inside: avoid; }
+.lp-sig { display: flex; flex-direction: column; font-size: 11px; color: var(--lp-muted); gap: 4px; }
+.lp-sig .lp-line { border-bottom: 1px solid var(--lp-ink); height: 34px; }
+.lp-sig b { color: var(--lp-ink); font-size: 12px; }
+@media (max-width: 420px) {
+  .lp-stats { grid-template-columns: repeat(2, 1fr); }
+  .lp-fields, .lp-sigs { grid-template-columns: 1fr; }
+  .lp-table .w-fix, .lp-fill { display: none; }
+}
+
+@page {
+  size: A4;
+  margin: 14mm 14mm 16mm;
+  @bottom-left { content: "Laudo de Vistoria de Entrega — Estação Nogueira II"; font-size: 8pt; color: #5d6673; }
+  @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 8pt; color: #5d6673; }
+}
 @media print {
   body { background: #fff; color: #000; padding: 0; }
   .topbar, .tabs, .banner, .toast, .no-print { display: none !important; }
   main { padding: 0; max-width: none; }
-  #report { border: 0; padding: 0; font-size: 11pt; color: #000; background: #fff; }
+  .laudo-wrap { margin: 0; overflow: visible; }
+  .laudo { box-shadow: none; border-radius: 0; padding: 0; font-size: 10pt; }
+  .laudo .lp-stats { grid-template-columns: repeat(4, 1fr); }
+  .laudo .lp-fields { grid-template-columns: 1fr 1fr; }
+  .laudo .lp-sigs { grid-template-columns: repeat(3, 1fr); }
+  .laudo .lp-table .w-fix, .laudo .lp-fill { display: table-cell; }
+  .laudo, .laudo * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .lp-table tr { break-inside: avoid; }
+  .laudo h2, .laudo h3 { break-after: avoid; }
 }

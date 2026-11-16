@@ -2,7 +2,7 @@
 import { progress } from './state.js';
 
 const pad = n => String(n).padStart(2, '0');
-const fmtDate = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+export const fmtDate = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 const OBS = '    Obs.: ';
 const OBS_CONT = ' '.repeat(OBS.length);
 

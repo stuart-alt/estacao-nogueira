@@ -2,6 +2,7 @@
 import { PROJECT, SOURCES, DELIVERY, CHECKLIST, TOOLS, REMINDERS, ALL_CHECK_ITEMS } from './data.js';
 import { loadState, saveState, setStatus, setNote, progress, roomProgress, emptyState } from './state.js';
 import { buildReport } from './report.js';
+import { buildReportHtml } from './report-html.js';
 
 const view = document.getElementById('view');
 const toastEl = document.getElementById('toast');
@@ -146,12 +147,13 @@ function renderLaudo() {
   const text = buildReport(state, { CHECKLIST, SOURCES, PROJECT });
   return `
     <h1 class="no-print">Laudo</h1>
-    <p class="muted no-print">Anexe este laudo ao termo de vistoria e peça que seja assinado.</p>
+    <p class="muted no-print">Imprima ou salve em PDF, leve na vistoria e peça que seja assinado. "Compartilhar" envia a versão em texto (WhatsApp/e-mail).</p>
     <div class="btn-row no-print">
-      <button type="button" class="btn primary" data-action="share">Compartilhar</button>
-      <button type="button" class="btn" data-action="print">Imprimir / PDF</button>
+      <button type="button" class="btn primary" data-action="print">Imprimir / PDF</button>
+      <button type="button" class="btn" data-action="share">Compartilhar texto</button>
     </div>
-    <pre id="report">${esc(text)}</pre>
+    <div class="laudo-wrap">${buildReportHtml(state, { CHECKLIST, SOURCES, PROJECT })}</div>
+    <details class="no-print text-version"><summary>Ver versão em texto</summary><pre id="report">${esc(text)}</pre></details>
     <div class="btn-row no-print">
       <button type="button" class="btn danger" data-action="reset">Zerar vistoria</button>
     </div>`;
@@ -203,6 +205,7 @@ async function share() {
     toast('Laudo copiado');
   } catch {
     const pre = document.getElementById('report');
+    pre.closest('details')?.setAttribute('open', '');
     const range = document.createRange();
     range.selectNodeContents(pre);
     const sel = window.getSelection();

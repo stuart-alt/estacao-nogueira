@@ -3,6 +3,7 @@ import { PROJECT, SOURCES, DELIVERY, CHECKLIST, TOOLS, REMINDERS, ALL_CHECK_ITEM
 import { loadState, saveState, setStatus, setNote, progress, roomProgress, emptyState } from './state.js';
 import { buildReport } from './report.js';
 import { buildReportHtml } from './report-html.js';
+import { MAX_PER_ITEM, resizeImage, openPhotoDb, addPhoto, listPhotos, deletePhoto, clearPhotos } from './photos.js';
 
 const view = document.getElementById('view');
 const toastEl = document.getElementById('toast');
@@ -34,6 +35,74 @@ function toast(msg) {
   toastEl.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { toastEl.hidden = true; }, 2500);
+}
+
+// ---------- Fotos (IndexedDB; cache em memória com URLs de objeto) ----------
+
+let photoDb = null;
+let photos = {}; // { [itemId]: [{ id, url }] }
+const photoList = id => photos[id] ?? [];
+const photosForReport = () => photos;
+const photoCounts = () => Object.fromEntries(Object.entries(photos).map(([k, v]) => [k, v.length]));
+
+async function initPhotos() {
+  try {
+    photoDb = await openPhotoDb();
+    const by = await listPhotos(photoDb);
+    photos = Object.fromEntries(Object.entries(by).map(([k, recs]) =>
+      [k, recs.map(r => ({ id: r.id, url: URL.createObjectURL(r.blob) }))]));
+    if (Object.keys(photos).length) route();
+  } catch {
+    photoDb = null;
+  }
+}
+
+async function addPhotos(itemId, files) {
+  if (!photoDb) { toast('Este navegador não permite guardar fotos'); return; }
+  const room = MAX_PER_ITEM - photoList(itemId).length;
+  const chosen = [...files].slice(0, Math.max(0, room));
+  if (files.length > chosen.length) toast(`Máximo de ${MAX_PER_ITEM} fotos por item`);
+  navigator.storage?.persist?.().catch(() => {});
+  for (const f of chosen) {
+    try {
+      const blob = await resizeImage(f);
+      const rec = await addPhoto(photoDb, itemId, blob);
+      (photos[itemId] ??= []).push({ id: rec.id, url: URL.createObjectURL(blob) });
+    } catch {
+      toast('Não foi possível salvar a foto');
+    }
+  }
+  refreshItem(itemId);
+}
+
+async function removePhoto(itemId, photoId) {
+  try {
+    await deletePhoto(photoDb, photoId);
+  } catch {
+    toast('Não foi possível apagar a foto');
+    return;
+  }
+  const p = photoList(itemId).find(x => x.id === photoId);
+  if (p) URL.revokeObjectURL(p.url);
+  photos[itemId] = photoList(itemId).filter(x => x.id !== photoId);
+  if (!photos[itemId].length) delete photos[itemId];
+  refreshItem(itemId);
+}
+
+async function resetPhotos() {
+  for (const list of Object.values(photos)) for (const p of list) URL.revokeObjectURL(p.url);
+  photos = {};
+  if (photoDb) await clearPhotos(photoDb).catch(() => {});
+}
+
+function openViewer(url) {
+  const v = document.createElement('div');
+  v.className = 'viewer';
+  v.setAttribute('role', 'dialog');
+  v.setAttribute('aria-label', 'Foto');
+  v.innerHTML = `<img src="${esc(url)}" alt="Foto do defeito"><button type="button" class="viewer-close" aria-label="Fechar">×</button>`;
+  v.addEventListener('click', () => v.remove());
+  document.body.appendChild(v);
 }
 
 // ---------- Telas ----------
@@ -119,7 +188,24 @@ function itemCard(i) {
         ${['ok', 'defeito', 'na'].map(s => `<button type="button" data-action="status" data-id="${esc(i.id)}" data-status="${s}" aria-pressed="${status === s}">${STATUS_LABEL[s]}</button>`).join('')}
       </div>
       ${showNote ? `<textarea data-action="note" data-id="${esc(i.id)}" placeholder="Descreva o defeito: onde, tamanho, quantidade…" aria-label="Anotação">${esc(note)}</textarea>` : ''}
+      ${photoBlock(i.id, status)}
     </div>`;
+}
+
+function photoBlock(itemId, status) {
+  const list = photoList(itemId);
+  if (status !== 'defeito' && !list.length) return '';
+  const thumbs = list.map((p, k) => `
+    <div class="thumb">
+      <button type="button" class="thumb-img" data-action="photo-view" data-id="${esc(p.id)}" data-item="${esc(itemId)}" aria-label="Ver foto ${k + 1}"><img src="${esc(p.url)}" alt=""></button>
+      <button type="button" class="thumb-del" data-action="photo-del" data-id="${esc(p.id)}" data-item="${esc(itemId)}" aria-label="Apagar foto ${k + 1}">×</button>
+    </div>`).join('');
+  const add = list.length < MAX_PER_ITEM ? `
+    <label class="btn photo-add">📷 Adicionar foto
+      <input type="file" accept="image/*" multiple data-action="photo-add" data-id="${esc(itemId)}">
+    </label>` : `<p class="muted">Limite de ${MAX_PER_ITEM} fotos atingido.</p>`;
+  const hint = status !== 'defeito' ? '<p class="muted">As fotos só entram no laudo quando o item está como Defeito.</p>' : '';
+  return `<div class="photos">${list.length ? `<div class="thumbs">${thumbs}</div>` : ''}${add}${hint}</div>`;
 }
 
 function renderRoom(id) {
@@ -144,15 +230,17 @@ function renderFerramentas() {
 }
 
 function renderLaudo() {
-  const text = buildReport(state, { CHECKLIST, SOURCES, PROJECT });
+  const text = buildReport(state, { CHECKLIST, SOURCES, PROJECT }, new Date(), photoCounts());
+  const hasPhotos = Object.keys(photos).length > 0;
   return `
     <h1 class="no-print">Laudo</h1>
     <p class="muted no-print">Imprima ou salve em PDF, leve na vistoria e peça que seja assinado. "Compartilhar" envia a versão em texto (WhatsApp/e-mail).</p>
+    ${hasPhotos ? '<p class="card no-print warn">As fotos ficam guardadas só neste aparelho. Salve o PDF assim que terminar a vistoria.</p>' : ''}
     <div class="btn-row no-print">
       <button type="button" class="btn primary" data-action="print">Imprimir / PDF</button>
       <button type="button" class="btn" data-action="share">Compartilhar texto</button>
     </div>
-    <div class="laudo-wrap">${buildReportHtml(state, { CHECKLIST, SOURCES, PROJECT })}</div>
+    <div class="laudo-wrap">${buildReportHtml(state, { CHECKLIST, SOURCES, PROJECT }, new Date(), photosForReport())}</div>
     <details class="no-print text-version"><summary>Ver versão em texto</summary><pre id="report">${esc(text)}</pre></details>
     <div class="btn-row no-print">
       <button type="button" class="btn danger" data-action="reset">Zerar vistoria</button>
@@ -195,7 +283,7 @@ function refreshItem(id) {
 }
 
 async function share() {
-  const text = buildReport(state, { CHECKLIST, SOURCES, PROJECT });
+  const text = buildReport(state, { CHECKLIST, SOURCES, PROJECT }, new Date(), photoCounts());
   if (navigator.share) {
     try { await navigator.share({ title: `Laudo de vistoria — ${PROJECT.name}`, text }); return; }
     catch (e) { if (e?.name === 'AbortError') return; }
@@ -234,14 +322,24 @@ view.addEventListener('click', e => {
     share();
   } else if (action === 'print') {
     window.print();
+  } else if (action === 'photo-view') {
+    const p = photoList(btn.dataset.item).find(x => x.id === id);
+    if (p) openViewer(p.url);
+  } else if (action === 'photo-del') {
+    if (confirm('Apagar esta foto?')) removePhoto(btn.dataset.item, id);
   } else if (action === 'reset') {
-    if (confirm('Apagar todas as marcações e anotações desta vistoria?')) {
+    if (confirm('Apagar todas as marcações, anotações e fotos desta vistoria?')) {
       state = emptyState();
       persist();
-      route();
-      toast('Vistoria zerada');
+      resetPhotos().then(() => { route(); toast('Vistoria zerada'); });
     }
   }
+});
+
+view.addEventListener('change', e => {
+  const input = e.target;
+  if (input.dataset?.action !== 'photo-add' || !input.files?.length) return;
+  addPhotos(input.dataset.id, input.files);
 });
 
 // Anotações: salvas com debounce, mas qualquer valor pendente é gravado antes de
@@ -278,5 +376,6 @@ window.addEventListener('pagehide', flushNotes);
 
 window.addEventListener('hashchange', () => { flushNotes(); route(); });
 route();
+initPhotos();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});

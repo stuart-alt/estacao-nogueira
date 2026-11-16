@@ -99,6 +99,36 @@ test('base contratual e assinaturas', () => {
   for (const p of ['Proprietário', 'Construtora', 'DKZA']) assert.ok(sig.includes(p), p);
 });
 
+test('fotos sob o defeito com legenda ligada à numeração', () => {
+  let s = setStatus(emptyState(), sala.items[0].id, 'defeito');
+  s = setStatus(s, cozinha.items[0].id, 'defeito');
+  const photos = { [cozinha.items[0].id]: [{ id: 'a', url: 'blob:x/1' }, { id: 'b', url: 'blob:x/2' }] };
+  const h = buildReportHtml(s, data, DATE, photos);
+  assert.ok(h.includes('<img src="blob:x/1"'));
+  assert.ok(h.includes('Foto 2.1') && h.includes('Foto 2.2'));
+  assert.ok(!h.includes('Foto 1.1'));
+  assert.match(h, /class="lp-photos"/);
+});
+
+test('fotos de item que não é defeito não entram', () => {
+  const s = setStatus(emptyState(), sala.items[0].id, 'ok');
+  const h = buildReportHtml(s, data, DATE, { [sala.items[0].id]: [{ id: 'a', url: 'blob:x/1' }] });
+  assert.ok(!h.includes('blob:x/1'));
+});
+
+test('fotos de documento com problema', () => {
+  const s = setStatus(emptyState(), docs.items[1].id, 'defeito');
+  const h = buildReportHtml(s, data, DATE, { [docs.items[1].id]: [{ id: 'a', url: 'blob:x/9' }] });
+  const docSec = h.slice(h.indexOf('data-section="documentos"'), h.indexOf('data-section="defeitos"'));
+  assert.ok(docSec.includes('blob:x/9') && docSec.includes('Foto D2.1'));
+});
+
+test('url da foto é escapada', () => {
+  const s = setStatus(emptyState(), sala.items[0].id, 'defeito');
+  const h = buildReportHtml(s, data, DATE, { [sala.items[0].id]: [{ id: 'a', url: 'x" onerror="alert(1)' }] });
+  assert.ok(!h.includes('" onerror="'));
+});
+
 test('id órfão ignorado', () => {
   const h = buildReportHtml(setStatus(emptyState(), 'nao-existe', 'defeito'), data, DATE);
   assert.equal(stat(h, 'defeito'), 0);

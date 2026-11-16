@@ -6,7 +6,8 @@ export const fmtDate = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.ge
 const OBS = '    Obs.: ';
 const OBS_CONT = ' '.repeat(OBS.length);
 
-export function buildReport(state, data, date = new Date()) {
+// photoCounts: { [itemId]: número de fotos } (opcional)
+export function buildReport(state, data, date = new Date(), photoCounts = {}) {
   const { CHECKLIST, SOURCES, PROJECT } = data;
   const all = CHECKLIST.flatMap(r => r.items);
   const p = progress(state, all);
@@ -25,7 +26,9 @@ export function buildReport(state, data, date = new Date()) {
     if (!defects.length) continue;
     out.push(`== ${room.room} ==`);
     for (const i of defects) {
-      out.push(`[ ] ${i.what} — Responsável: ${SOURCES[i.source].label}`);
+      const nf = photoCounts[i.id] ?? 0;
+      const fotos = nf ? ` (${nf} foto${nf > 1 ? 's' : ''} — ver laudo PDF)` : '';
+      out.push(`[ ] ${i.what} — Responsável: ${SOURCES[i.source].label}${fotos}`);
       const note = state.items[i.id].note ?? '';
       if (note.trim()) {
         note.trim().split(/\r?\n/).forEach((line, k) => out.push((k ? OBS_CONT : OBS) + line));

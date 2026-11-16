@@ -68,6 +68,16 @@ test('sem pendentes não mostra linha PENDENTES', () => {
   assert.ok(!buildReport(s, data, DATE).includes('PENDENTES'));
 });
 
+test('contagem de fotos no texto', () => {
+  let s = setStatus(emptyState(), sala.items[0].id, 'defeito');
+  s = setStatus(s, sala.items[1].id, 'defeito');
+  s = setStatus(s, sala.items[2].id, 'defeito');
+  const t = buildReport(s, data, DATE, { [sala.items[0].id]: 2, [sala.items[1].id]: 1 });
+  assert.ok(t.includes(`${sala.items[0].what} — Responsável: Construtora (2 fotos — ver laudo PDF)`));
+  assert.ok(t.includes(`${sala.items[1].what} — Responsável: Construtora (1 foto — ver laudo PDF)`));
+  assert.ok(t.includes(`${sala.items[2].what} — Responsável: Construtora\n`));
+});
+
 test('id órfão ignorado', () => {
   const t = buildReport(setStatus(emptyState(), 'nao-existe', 'defeito'), data, DATE);
   assert.match(t, /Defeitos: 0/);

@@ -7,7 +7,13 @@ const noteHtml = n => esc(String(n ?? '').trim()).replace(/\r?\n/g, '<br>');
 const badge = (src, SOURCES) => `<span class="badge badge-${src}">${esc(SOURCES[src].label)}</span>`;
 const DOC_STATUS = { ok: ['Recebido', 'st-ok'], defeito: ['Com problema', 'st-bad'], na: ['Não se aplica', 'st-na'] };
 
-export function buildReportHtml(state, data, date = new Date()) {
+const photosHtml = (list, prefix) => (list?.length ? `
+  <div class="lp-photos">${list.map((ph, k) => `
+    <figure><img src="${esc(ph.url)}" alt="${prefix}.${k + 1}"><figcaption>Foto ${prefix}.${k + 1}</figcaption></figure>`).join('')}
+  </div>` : '');
+
+// photos: { [itemId]: [{ id, url }] } (opcional) — só entram itens com status "defeito".
+export function buildReportHtml(state, data, date = new Date(), photos = {}) {
   const { CHECKLIST, SOURCES, PROJECT } = data;
   const all = CHECKLIST.flatMap(r => r.items);
   const p = progress(state, all);
@@ -25,10 +31,11 @@ export function buildReportHtml(state, data, date = new Date()) {
       <h2>Documentos recebidos na entrega</h2>
       <table class="lp-table">
         <thead><tr><th>Documento</th><th class="w-status">Situação</th></tr></thead>
-        <tbody>${docsRoom.items.map(i => {
+        <tbody>${docsRoom.items.map((i, d) => {
           const [label, cls] = DOC_STATUS[st(i.id)] ?? ['Pendente', 'st-pend'];
           const note = state.items[i.id]?.note;
-          return `<tr><td>${esc(i.what)}${note?.trim() ? `<div class="lp-note">${noteHtml(note)}</div>` : ''}</td>
+          const pics = st(i.id) === 'defeito' ? photosHtml(photos[i.id], `D${d + 1}`) : '';
+          return `<tr><td>${esc(i.what)}${note?.trim() ? `<div class="lp-note">${noteHtml(note)}</div>` : ''}${pics}</td>
             <td><span class="lp-st ${cls}">${label}</span></td></tr>`;
         }).join('')}</tbody>
       </table>
@@ -46,8 +53,9 @@ export function buildReportHtml(state, data, date = new Date()) {
           <thead><tr><th class="num">Nº</th><th>Item e observação</th><th class="w-resp">Responsável</th><th class="w-fix">Corrigido em</th></tr></thead>
           <tbody>${items.map(i => {
             const note = state.items[i.id]?.note;
-            return `<tr><td class="num">${++n}</td>
-              <td><strong>${esc(i.what)}</strong>${note?.trim() ? `<div class="lp-note">${noteHtml(note)}</div>` : ''}</td>
+            const num = ++n;
+            return `<tr><td class="num">${num}</td>
+              <td><strong>${esc(i.what)}</strong>${note?.trim() ? `<div class="lp-note">${noteHtml(note)}</div>` : ''}${photosHtml(photos[i.id], num)}</td>
               <td>${badge(i.source, SOURCES)}</td>
               <td class="lp-fill">___/___/____</td></tr>`;
           }).join('')}</tbody>
